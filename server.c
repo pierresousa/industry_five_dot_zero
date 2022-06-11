@@ -11,6 +11,9 @@
 #include <sys/types.h>
 
 #define BUFSZ 1024
+#define MAX_CLIENTS 15
+
+int num_clients_connected = 0;
 
 void usage(int argc, char **argv) {
     printf("usage: %s <server port>\n", argv[0]);
@@ -22,6 +25,8 @@ struct client_data {
     int csock;
     struct sockaddr_storage storage;
 };
+
+struct client_data *clients[MAX_CLIENTS];
 
 void * client_thread(void *data) {
     struct client_data *cdata = (struct client_data *)data;
@@ -55,6 +60,27 @@ void * client_thread(void *data) {
     
     close(cdata->csock);
     pthread_exit(EXIT_SUCCESS);
+}
+
+void insert_clients (void *data) {
+    struct client_data *cdata = (struct client_data *)data;
+    char buf[BUFSZ];
+    printf("ADICIONADO %d\n", cdata->csock);
+    snprintf(buf, BUFSZ, "ADICIONADO %d", cdata->csock);
+    strtok(buf, "\0");
+    send(cdata->csock, buf, strlen(buf), 0);
+
+    clients[num_clients_connected] = cdata;
+    num_clients_connected = num_clients_connected + 1;
+
+    for (int i=0; i<num_clients_connected; i++) {
+        if (i != (num_clients_connected-1)) {
+            printf("OUTRO EQUIPAMENTO ADICIONADO\n");
+            snprintf(buf, BUFSZ, "OUTRO EQUIPAMENTO ADICIONADO");
+            strtok(buf, "\0");
+            send(clients[i]->csock, buf, strlen(buf), 0);
+        }
+    }
 }
 
 int main(int argc, char **argv) {
@@ -107,7 +133,7 @@ int main(int argc, char **argv) {
         }
         cdata->csock = csock;
         memcpy(&(cdata->storage), &cstorage, sizeof(cstorage));
-
+        insert_clients(cdata);
         pthread_t tid;
         pthread_create(&tid, NULL, client_thread, cdata);
     }
