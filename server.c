@@ -133,6 +133,10 @@ void * client_thread(void *data) {
 			strncpy(substring,buf,2);
 			substring[2] = '\0';
 			int command = atoi(substring);
+            int identifier = 0;
+            int identifier_equipament_i = 0;
+            int identifier_equipament_j = 0;
+
 			switch (command)
 			{
 				case 1:
@@ -145,17 +149,15 @@ void * client_thread(void *data) {
 				
                 case 2:
 					/* code */
-					puts("Eh para remover equipamento: ");
                     strncpy(substring,buf+2,2);
                     substring[2] = '\0';
-                    int identifier = atoi(substring);
-                    puts(substring);
-                    if (clients[identifier-1] == 0) {
+                    identifier = atoi(substring);
+                    if (clients[identifier-1] == NULL) {
                         snprintf(buf, BUFSZ, "07xxxx01");
                         strtok(buf, "\0");
                         send(cdata->csock, buf, strlen(buf), 0);
                     } else {
-                        clients[identifier-1] = 0;
+                        clients[identifier-1] = NULL;
                         if (identifier>9) {
                             snprintf(buf, BUFSZ, "08xx%d01", identifier);
                             strtok(buf, "\0");
@@ -186,6 +188,82 @@ void * client_thread(void *data) {
                     }
 					break;
 				
+                case 5:
+					/* code */
+					strncpy(substring,buf+2,2);
+                    substring[2] = '\0';
+                    identifier_equipament_i = atoi(substring);
+                    strncpy(substring,buf+4,2);
+                    substring[2] = '\0';
+                    identifier_equipament_j = atoi(substring);
+                    
+                    if (clients[identifier_equipament_i-1] == NULL) {
+                        snprintf(message_print, BUFSZ, "Equipament %d not found", identifier_equipament_i);
+                        puts(message_print);
+                        if (identifier_equipament_i > 9) {
+                            snprintf(buf, BUFSZ, "07xx%d02", identifier_equipament_j);
+                        } else {
+                            snprintf(buf, BUFSZ, "07xx0%d02", identifier_equipament_j);
+                        }
+                        strtok(buf, "\0");
+                        send(cdata->csock, buf, strlen(buf), 0);
+                    } else {
+                        if (clients[identifier_equipament_j-1] == NULL) {
+                            snprintf(message_print, BUFSZ, "Equipament %d not found", identifier_equipament_j);
+                            puts(message_print);
+                            if (identifier_equipament_j > 9) {
+                                snprintf(buf, BUFSZ, "07xx%d03", identifier_equipament_j);
+                            } else {
+                                snprintf(buf, BUFSZ, "07xx0%d03", identifier_equipament_j);
+                            }
+                            strtok(buf, "\0");
+                            send(cdata->csock, buf, strlen(buf), 0);
+                        } else {
+                            send(clients[identifier_equipament_j-1]->csock, buf, strlen(buf), 0);
+                        }
+
+                    }
+
+					break;
+                
+                case 6:
+					/* code */
+					strncpy(substring,buf+2,2);
+                    substring[2] = '\0';
+                    identifier_equipament_j = atoi(substring);
+                    strncpy(substring,buf+4,2);
+                    substring[2] = '\0';
+                    identifier_equipament_i = atoi(substring);
+                    
+                    if (clients[identifier_equipament_j-1] == NULL) {
+                        snprintf(message_print, BUFSZ, "Equipament %d not found", identifier_equipament_j);
+                        puts(message_print);
+                        if (identifier_equipament_j > 9) {
+                            snprintf(buf, BUFSZ, "07xx%d02", identifier_equipament_i);
+                        } else {
+                            snprintf(buf, BUFSZ, "07xx0%d02", identifier_equipament_i);
+                        }
+                        strtok(buf, "\0");
+                        send(cdata->csock, buf, strlen(buf), 0);
+                    } else {
+                        if (clients[identifier_equipament_j-1] == NULL) {
+                            snprintf(message_print, BUFSZ, "Equipament %d not found", identifier_equipament_j);
+                            puts(message_print);
+                            if (identifier_equipament_j > 9) {
+                                snprintf(buf, BUFSZ, "07xx%d03", identifier_equipament_j);
+                            } else {
+                                snprintf(buf, BUFSZ, "07xx0%d03", identifier_equipament_j);
+                            }
+                            strtok(buf, "\0");
+                            send(cdata->csock, buf, strlen(buf), 0);
+                        } else {
+                            send(clients[identifier_equipament_i-1]->csock, buf, strlen(buf), 0);
+                        }
+
+                    }
+
+					break;
+
 				default:
 					break;
 			}
