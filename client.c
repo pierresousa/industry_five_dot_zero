@@ -12,11 +12,9 @@
 
 #include <termios.h>
 
-#define BUFSZ 1024
-#define MAX_CLIENTS 2
+#define BUFSZ 40
+#define MAX_CLIENTS 15
 
-int send_message_flag = 0;
-int receive_message_flag = 0;
 int my_identifier = 0;
 
 struct client_data {
@@ -44,7 +42,6 @@ void * message_receive_thread(void *data) {
 		// Conexao fechada pelo servidor
 		if (!count) {
 			close(cdata->socket);
-			/* Restore old settings */
 			exit(EXIT_SUCCESS);
 		}
 
@@ -76,8 +73,7 @@ void * message_receive_thread(void *data) {
 					/* code */
 					strncpy(substring,buf + 6,2);
 					substring[2] = '\0';
-					int payload = atoi(substring);
-					switch (payload)
+					switch (atoi(substring))
 					{
 						case 1:
 							snprintf(message_print, BUFSZ, "Equipament not found");
@@ -107,6 +103,24 @@ void * message_receive_thread(void *data) {
 						if (payload>0 && payload <= 15) {
 							clients[(payload-1)] = 1;
 						}
+					}
+					break;
+				case 8:
+					strncpy(substring,buf+4,2);
+					substring[2] = '\0';
+					if (atoi(substring) == my_identifier) {
+						snprintf(message_print, BUFSZ, "Successful removal");
+						puts(message_print);
+						close(cdata->socket);
+						exit(EXIT_SUCCESS);
+					} else {
+						clients[(atoi(substring)-1)] = 0;
+						if (atoi(substring)>9) {
+							snprintf(message_print, BUFSZ, "Equipament %d removed", atoi(substring));
+						} else {
+							snprintf(message_print, BUFSZ, "Equipament 0%d removed", atoi(substring));
+						}
+						puts(message_print);
 					}
 					break;
 				
@@ -174,19 +188,28 @@ int main(int argc, char **argv) {
 		strtok(buf, "\0");
 
 		if (strlen(buf)>1) {
-			size_t count = send(s, buf, strlen(buf)+1, 0);
-			if (count != strlen(buf)+1) {
-				logexit("send");
+			if (strcmp(buf, "close connection\n") == 0 || strcmp(buf, "close connection") == 0) {
+				if (my_identifier > 9) {
+					snprintf(buf, BUFSZ, "02%dxxxx", my_identifier);
+					strtok(buf, "\0");
+				} else {
+					snprintf(buf, BUFSZ, "020%dxxxx", my_identifier);
+					strtok(buf, "\0");
+				}
+				size_t count = send(s, buf, strlen(buf)+1, 0);
+				if (count != strlen(buf)+1) {
+					logexit("send");
+				}
+
+				// Conexao fechada pelo servidor
+				if (!count) {
+					break;
+				}
 			}
 
-			// Conexao fechada pelo servidor
-			if (!count) {
-				break;
-			}
 		}
 	}
 
 	close(s);
-	/* Restore old settings */
 	exit(EXIT_SUCCESS);
 }

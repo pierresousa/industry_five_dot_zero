@@ -10,8 +10,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#define BUFSZ 1024
-#define MAX_CLIENTS 2
+#define BUFSZ 40
+#define MAX_CLIENTS 15
 
 int num_clients_connected = 0;
 
@@ -70,9 +70,9 @@ int insert_clients (void *data) {
 
 
             if(i>=9) {
-                printf("\nEquipament %d added\n", (i+1));
+                printf("Equipament %d added\n", (i+1));
             } else {
-                printf("\nEquipament 0%d added\n", (i+1));
+                printf("Equipament 0%d added\n", (i+1));
             }
 
             if(i>=9) {
@@ -128,11 +128,6 @@ void * client_thread(void *data) {
             pthread_exit(EXIT_SUCCESS);
         }
         printf("[msg] %s, %d bytes: %s\n", caddrstr, (int)count, buf);
-        // strtok(buf, "\0");
-        // count = send(cdata->csock, buf, strlen(buf), 0);
-        // if (count != strlen(buf)) {
-        //     logexit("send");
-        // }
 
         if (strlen(buf)>1) {
 			strncpy(substring,buf,2);
@@ -144,6 +139,49 @@ void * client_thread(void *data) {
 					/* code */
 					if (insert_clients(data) == -1){
                         close(cdata->csock);
+                        pthread_exit(EXIT_SUCCESS);
+                    }
+					break;
+				
+                case 2:
+					/* code */
+					puts("Eh para remover equipamento: ");
+                    strncpy(substring,buf+2,2);
+                    substring[2] = '\0';
+                    int identifier = atoi(substring);
+                    puts(substring);
+                    if (clients[identifier-1] == 0) {
+                        snprintf(buf, BUFSZ, "07xxxx01");
+                        strtok(buf, "\0");
+                        send(cdata->csock, buf, strlen(buf), 0);
+                    } else {
+                        clients[identifier-1] = 0;
+                        if (identifier>9) {
+                            snprintf(buf, BUFSZ, "08xx%d01", identifier);
+                            strtok(buf, "\0");
+                        } else {
+                            snprintf(buf, BUFSZ, "08xx0%d01", identifier);
+                            strtok(buf, "\0");
+                        }
+                        send(cdata->csock, buf, strlen(buf), 0);
+                        close(cdata->csock);
+                        if (identifier>9) {
+                            snprintf(message_print, BUFSZ, "Equipament %d removed", identifier);
+                        } else {
+                            snprintf(message_print, BUFSZ, "Equipament 0%d removed", identifier);
+                        }
+                        puts(message_print);
+                        for (int j=0; j<MAX_CLIENTS; j++) {
+                            if (j != (identifier-1) && clients[j] != NULL) {
+                                if(identifier>=9) {
+                                    snprintf(buf, BUFSZ, "08xx%d01", identifier);
+                                } else {
+                                    snprintf(buf, BUFSZ, "08xx0%d01", identifier);
+                                }
+                                strtok(buf, "\0");
+                                send(clients[j]->csock, buf, strlen(buf), 0);
+                            }
+                        }
                         pthread_exit(EXIT_SUCCESS);
                     }
 					break;
@@ -212,10 +250,7 @@ int main(int argc, char **argv) {
         }
         cdata->csock = csock;
         memcpy(&(cdata->storage), &cstorage, sizeof(cstorage));
-        // if (insert_clients(cdata) == 1){
-        //     pthread_t tid;
-        //     pthread_create(&tid, NULL, client_thread, cdata);
-        // }
+
         pthread_t tid;
         pthread_create(&tid, NULL, client_thread, cdata);
     }
