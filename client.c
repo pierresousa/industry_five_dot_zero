@@ -46,10 +46,12 @@ void * message_receive_thread(void *data) {
 		}
 
 		strtok(buf, "\n");
+		/*
 		puts("--------------");
 		puts(buf);
 		puts("--------------");
-		
+		*/
+	
 		if (strlen(buf)>1) {
 			strncpy(substring,buf,2);
 			substring[2] = '\0';
@@ -272,12 +274,30 @@ int main(int argc, char **argv) {
 			}
 
 			if (strcmp(buf, "list equipment\n") == 0 || strcmp(buf, "list equipment") == 0) {
-				memset(buf, 0, BUFSZ);
+				int has_print = 0;
 				for (int i=0; i<MAX_CLIENTS; i++) {
 					if (clients[i] != 0) {
-						
+						if (has_print == 0) {
+							if (i>9) {
+								has_print = 1;
+								printf("%d", (i+1));
+							} else {
+								has_print = 1;
+								printf("0%d", (i+1));
+							}
+						} else {
+							if (i>9) {
+								has_print = 1;
+								printf(" %d", (i+1));
+							} else {
+								has_print = 1;
+								printf(" 0%d", (i+1));
+							}
+
+						}
 					}
 				}
+				printf("\n");
 			}
 			
 			strncpy(substring,buf,25);

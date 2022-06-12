@@ -119,15 +119,11 @@ void * client_thread(void *data) {
         size_t count = recv(cdata->csock, buf, BUFSZ - 1, 0);
         if (count == 0) {
             printf("[log] conexao fechada pelo cliente: %s\n", caddrstr);
+            printf("[log] conexao fechada de forma invalida! nenhuma tratativa sera feita.\n");
             break;
         }
-
-        if (strcmp(buf, "close connection\n") == 0) {
-            printf("[log] cliente solicitou fechar conexao: %s\n", caddrstr);
-            close(cdata->csock);
-            pthread_exit(EXIT_SUCCESS);
-        }
-        printf("[msg] %s, %d bytes: %s\n", caddrstr, (int)count, buf);
+        
+        // printf("[msg] %s, %d bytes: %s\n", caddrstr, (int)count, buf);
 
         if (strlen(buf)>1) {
 			strncpy(substring,buf,2);
