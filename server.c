@@ -28,15 +28,69 @@ struct client_data {
 
 struct client_data *clients[MAX_CLIENTS];
 
+int insert_clients (void *data) {
+    struct client_data *cdata = (struct client_data *)data;
+    char buf[BUFSZ];
+    
+    if (num_clients_connected >= MAX_CLIENTS) {
+        // Se limite excedido, nao ha IdEQ
+        snprintf(buf, BUFSZ, "07xxxx04");
+        strtok(buf, "\0");
+        send(cdata->csock, buf, strlen(buf), 0);
+        close(cdata->csock);
+        return -1;
+    }
+
+    for (int i=0; i<MAX_CLIENTS; i++) {
+        if (clients[i] == NULL) {
+            clients[i] = cdata;
+            num_clients_connected++;
+
+
+            if(i>=9) {
+                printf("\nEquipament %d added\n", (i+1));
+            } else {
+                printf("\nEquipament 0%d added\n", (i+1));
+            }
+
+            if(i>=9) {
+                snprintf(buf, BUFSZ, "03xxxx%d", (i+1));
+            } else {
+                snprintf(buf, BUFSZ, "03xxxx0%d", (i+1));
+            }
+            strtok(buf, "\0");
+            send(cdata->csock, buf, strlen(buf), 0);
+
+            for (int j=0; j<MAX_CLIENTS; j++) {
+                if (j != i && clients[j] != NULL) {
+                    if(i>=9) {
+                        snprintf(buf, BUFSZ, "03xxxx%d", (i+1));
+                    } else {
+                        snprintf(buf, BUFSZ, "03xxxx0%d", (i+1));
+                    }
+                    strtok(buf, "\0");
+                    send(clients[j]->csock, buf, strlen(buf), 0);
+                }
+            }
+
+            return 1;
+        }
+    }
+
+    // Nem precisa desse return devido as consideracoes de projeto
+    return 1;
+}
+
 void * client_thread(void *data) {
     struct client_data *cdata = (struct client_data *)data;
     struct sockaddr *caddr = (struct sockaddr *)(&cdata->storage);
 
     char caddrstr[BUFSZ];
     addrtostr(caddr, caddrstr, BUFSZ);
-    printf("[log] conexao de %s\n", caddrstr);
 
     char buf[BUFSZ];
+    char message_print[BUFSZ];
+	char substring[3];
     while (1) {
         memset(buf, 0, BUFSZ);
         size_t count = recv(cdata->csock, buf, BUFSZ - 1, 0);
@@ -56,31 +110,29 @@ void * client_thread(void *data) {
         if (count != strlen(buf)) {
             logexit("send");
         }
+
+        if (strlen(buf)>1) {
+			strncpy(substring,buf,2);
+			substring[2] = '\0';
+			int command = atoi(substring);
+			switch (command)
+			{
+				case 1:
+					/* code */
+					if (insert_clients(data) == -1){
+                        close(cdata->csock);
+                        pthread_exit(EXIT_SUCCESS);
+                    }
+					break;
+				
+				default:
+					break;
+			}
+		}
     }
     
     close(cdata->csock);
     pthread_exit(EXIT_SUCCESS);
-}
-
-void insert_clients (void *data) {
-    struct client_data *cdata = (struct client_data *)data;
-    char buf[BUFSZ];
-    printf("ADICIONADO %d\n", cdata->csock);
-    snprintf(buf, BUFSZ, "ADICIONADO %d", cdata->csock);
-    strtok(buf, "\0");
-    send(cdata->csock, buf, strlen(buf), 0);
-
-    clients[num_clients_connected] = cdata;
-    num_clients_connected = num_clients_connected + 1;
-
-    for (int i=0; i<num_clients_connected; i++) {
-        if (i != (num_clients_connected-1)) {
-            printf("OUTRO EQUIPAMENTO ADICIONADO\n");
-            snprintf(buf, BUFSZ, "OUTRO EQUIPAMENTO ADICIONADO");
-            strtok(buf, "\0");
-            send(clients[i]->csock, buf, strlen(buf), 0);
-        }
-    }
 }
 
 int main(int argc, char **argv) {
@@ -113,6 +165,10 @@ int main(int argc, char **argv) {
         logexit("listen");
     }
 
+    for (int i=0; i<MAX_CLIENTS; i++) {
+        clients[i] = NULL;
+    }
+
     char addrstr[BUFSZ];
     addrtostr(addr, addrstr, BUFSZ);
     printf("Ligado a %s, esperando conexoes\n", addrstr);
@@ -133,7 +189,10 @@ int main(int argc, char **argv) {
         }
         cdata->csock = csock;
         memcpy(&(cdata->storage), &cstorage, sizeof(cstorage));
-        insert_clients(cdata);
+        // if (insert_clients(cdata) == 1){
+        //     pthread_t tid;
+        //     pthread_create(&tid, NULL, client_thread, cdata);
+        // }
         pthread_t tid;
         pthread_create(&tid, NULL, client_thread, cdata);
     }
