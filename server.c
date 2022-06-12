@@ -68,7 +68,6 @@ int insert_clients (void *data) {
             clients[i] = cdata;
             num_clients_connected++;
 
-
             if(i>=9) {
                 printf("Equipament %d added\n", (i+1));
             } else {
@@ -154,6 +153,7 @@ void * client_thread(void *data) {
                         send(cdata->csock, buf, strlen(buf), 0);
                     } else {
                         clients[identifier-1] = NULL;
+                        num_clients_connected--;
                         if (identifier>9) {
                             snprintf(buf, BUFSZ, "08xx%d01", identifier);
                             strtok(buf, "\0");
