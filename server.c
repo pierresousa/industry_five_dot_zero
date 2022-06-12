@@ -11,7 +11,7 @@
 #include <sys/types.h>
 
 #define BUFSZ 1024
-#define MAX_CLIENTS 15
+#define MAX_CLIENTS 2
 
 int num_clients_connected = 0;
 
@@ -28,10 +28,32 @@ struct client_data {
 
 struct client_data *clients[MAX_CLIENTS];
 
+void res_list (void *data) {
+    struct client_data *cdata = (struct client_data *)data;
+    char buf[BUFSZ];
+    memset(buf, 0, BUFSZ);
+    snprintf(buf, BUFSZ, "04xxxx");
+
+    char identifier[3];
+    for (int i=0; i<MAX_CLIENTS; i++) {
+        if (clients[i] != NULL) {
+            if(i>=9) {
+                snprintf(identifier, 3, "%d", (i+1));
+            } else {
+                snprintf(identifier, 3, "0%d", (i+1));
+            }
+            strcat(buf, identifier);
+        }
+    }
+    strtok(buf, "\0");
+    send(cdata->csock, buf, strlen(buf), 0);
+}
+
 int insert_clients (void *data) {
     struct client_data *cdata = (struct client_data *)data;
     char buf[BUFSZ];
-    
+    memset(buf, 0, BUFSZ);
+
     if (num_clients_connected >= MAX_CLIENTS) {
         // Se limite excedido, nao ha IdEQ
         snprintf(buf, BUFSZ, "07xxxx04");
@@ -73,6 +95,7 @@ int insert_clients (void *data) {
                 }
             }
 
+            res_list(data);
             return 1;
         }
     }
@@ -104,12 +127,12 @@ void * client_thread(void *data) {
             close(cdata->csock);
             pthread_exit(EXIT_SUCCESS);
         }
-        printf("[msg] %s, %d bytes: %s", caddrstr, (int)count, buf);
-        strtok(buf, "\0");
-        count = send(cdata->csock, buf, strlen(buf), 0);
-        if (count != strlen(buf)) {
-            logexit("send");
-        }
+        printf("[msg] %s, %d bytes: %s\n", caddrstr, (int)count, buf);
+        // strtok(buf, "\0");
+        // count = send(cdata->csock, buf, strlen(buf), 0);
+        // if (count != strlen(buf)) {
+        //     logexit("send");
+        // }
 
         if (strlen(buf)>1) {
 			strncpy(substring,buf,2);

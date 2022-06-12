@@ -13,6 +13,7 @@
 #include <termios.h>
 
 #define BUFSZ 1024
+#define MAX_CLIENTS 2
 
 int send_message_flag = 0;
 int receive_message_flag = 0;
@@ -21,6 +22,8 @@ int my_identifier = 0;
 struct client_data {
     int socket;
 };
+
+int clients[MAX_CLIENTS];
 
 void usage(int argc, char **argv) {
 	printf("usage: %s <server IP> <server port>\n", argv[0]);
@@ -40,11 +43,15 @@ void * message_receive_thread(void *data) {
 		
 		// Conexao fechada pelo servidor
 		if (!count) {
-			break;
+			close(cdata->socket);
+			/* Restore old settings */
+			exit(EXIT_SUCCESS);
 		}
 
 		strtok(buf, "\n");
+		puts("--------------");
 		puts(buf);
+		puts("--------------");
 		
 		if (strlen(buf)>1) {
 			strncpy(substring,buf,2);
@@ -61,8 +68,46 @@ void * message_receive_thread(void *data) {
 						snprintf(message_print, BUFSZ, "New ID: %d", my_identifier);
 					} else{
 						snprintf(message_print, BUFSZ, "Equipament %d added", atoi(substring));
+						clients[(atoi(substring)-1)] = 1;
 					}
 					puts(message_print);
+					break;
+				case 7:
+					/* code */
+					strncpy(substring,buf + 6,2);
+					substring[2] = '\0';
+					int payload = atoi(substring);
+					switch (payload)
+					{
+						case 1:
+							snprintf(message_print, BUFSZ, "Equipament not found");
+							puts(message_print);
+							break;
+						case 2:
+							snprintf(message_print, BUFSZ, "Source equipament not found");
+							puts(message_print);
+							break;
+						case 3:
+							snprintf(message_print, BUFSZ, "Target equipament not found");
+							puts(message_print);
+							break;
+						case 4:
+							snprintf(message_print, BUFSZ, "Equipament limit exceeded");
+							puts(message_print);
+							break;
+						default:
+							break;
+					}
+					break;
+				case 4:
+					for (int count = 6; count<strlen(buf); count += 2) {
+						strncpy(substring,buf + count,2);
+						substring[2] = '\0';
+						int payload = atoi(substring);
+						if (payload>0 && payload <= 15) {
+							clients[(payload-1)] = 1;
+						}
+					}
 					break;
 				
 				default:
@@ -116,6 +161,10 @@ int main(int argc, char **argv) {
 	{
 		continue;
 	}
+
+	for (int i=0; i<MAX_CLIENTS; i++) {
+        clients[i] = 0;
+    }
 	
 	while (1) {
 		memset(buf, 0, BUFSZ);
