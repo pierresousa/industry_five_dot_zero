@@ -194,7 +194,11 @@ void * client_thread(void *data) {
                     identifier_equipament_j = atoi(substring);
                     
                     if (clients[identifier_equipament_i-1] == NULL) {
-                        snprintf(message_print, BUFSZ, "Equipament %d not found", identifier_equipament_i);
+                        if (identifier_equipament_i > 9) {
+                            snprintf(message_print, BUFSZ, "Equipament %d not found", identifier_equipament_i);
+                        } else {
+                            snprintf(message_print, BUFSZ, "Equipament 0%d not found", identifier_equipament_i);
+                        }
                         puts(message_print);
                         if (identifier_equipament_i > 9) {
                             snprintf(buf, BUFSZ, "07xx%d02", identifier_equipament_j);
@@ -205,7 +209,11 @@ void * client_thread(void *data) {
                         send(cdata->csock, buf, strlen(buf), 0);
                     } else {
                         if (clients[identifier_equipament_j-1] == NULL) {
-                            snprintf(message_print, BUFSZ, "Equipament %d not found", identifier_equipament_j);
+                            if (identifier_equipament_j > 9) {
+                                snprintf(message_print, BUFSZ, "Equipament %d not found", identifier_equipament_j);
+                            } else {
+                                snprintf(message_print, BUFSZ, "Equipament 0%d not found", identifier_equipament_j);
+                            }
                             puts(message_print);
                             if (identifier_equipament_j > 9) {
                                 snprintf(buf, BUFSZ, "07xx%d03", identifier_equipament_j);

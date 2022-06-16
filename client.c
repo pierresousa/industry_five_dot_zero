@@ -65,9 +65,17 @@ void * message_receive_thread(void *data) {
 					substring[2] = '\0';
 					if (my_identifier == 0) {
 						my_identifier = atoi(substring);
-						snprintf(message_print, BUFSZ, "New ID: %d", my_identifier);
+						if (my_identifier > 9) {
+							snprintf(message_print, BUFSZ, "New ID: %d", my_identifier);
+						} else {
+							snprintf(message_print, BUFSZ, "New ID: 0%d", my_identifier);
+						}
 					} else{
-						snprintf(message_print, BUFSZ, "Equipament %d added", atoi(substring));
+						if (atoi(substring) > 9) {
+							snprintf(message_print, BUFSZ, "Equipament %d added", atoi(substring));
+						} else {
+							snprintf(message_print, BUFSZ, "Equipament 0%d added", atoi(substring));
+						}
 						clients[(atoi(substring)-1)] = 1;
 					}
 					puts(message_print);
@@ -277,23 +285,25 @@ int main(int argc, char **argv) {
 				int has_print = 0;
 				for (int i=0; i<MAX_CLIENTS; i++) {
 					if (clients[i] != 0) {
-						if (has_print == 0) {
-							if (i>9) {
-								has_print = 1;
-								printf("%d", (i+1));
+						if (my_identifier != (i+1)) {
+							if (has_print == 0) {
+								if (i>9) {
+									has_print = 1;
+									printf("%d", (i+1));
+								} else {
+									has_print = 1;
+									printf("0%d", (i+1));
+								}
 							} else {
-								has_print = 1;
-								printf("0%d", (i+1));
-							}
-						} else {
-							if (i>9) {
-								has_print = 1;
-								printf(" %d", (i+1));
-							} else {
-								has_print = 1;
-								printf(" 0%d", (i+1));
-							}
+								if (i>9) {
+									has_print = 1;
+									printf(" %d", (i+1));
+								} else {
+									has_print = 1;
+									printf(" 0%d", (i+1));
+								}
 
+							}
 						}
 					}
 				}
