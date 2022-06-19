@@ -65,17 +65,9 @@ void * message_receive_thread(void *data) {
 					substring[2] = '\0';
 					if (my_identifier == 0) {
 						my_identifier = atoi(substring);
-						if (my_identifier > 9) {
-							snprintf(message_print, BUFSZ, "New ID: %d", my_identifier);
-						} else {
-							snprintf(message_print, BUFSZ, "New ID: 0%d", my_identifier);
-						}
+						snprintf(message_print, BUFSZ, "New ID: %02d", my_identifier);
 					} else{
-						if (atoi(substring) > 9) {
-							snprintf(message_print, BUFSZ, "Equipament %d added", atoi(substring));
-						} else {
-							snprintf(message_print, BUFSZ, "Equipament 0%d added", atoi(substring));
-						}
+						snprintf(message_print, BUFSZ, "Equipament %02d added", atoi(substring));
 						clients[(atoi(substring)-1)] = 1;
 					}
 					puts(message_print);
@@ -144,35 +136,8 @@ void * message_receive_thread(void *data) {
 					puts("requested information");
 					srand(time(NULL));
 					int value = rand()%10;
-					if (my_identifier > 9 && identifier_equipament_i > 9) {
-						if (value > 9){
-							snprintf(buf, BUFSZ, "06%d%d%d", my_identifier, identifier_equipament_i, value);
-						} else {
-							snprintf(buf, BUFSZ, "06%d%d0%d", my_identifier, identifier_equipament_i, value);
-						}
-						strtok(buf, "\0");
-					} else if (my_identifier < 9 && identifier_equipament_i < 9) {
-						if (value > 9){
-							snprintf(buf, BUFSZ, "060%d0%d%d", my_identifier, identifier_equipament_i, value);
-						} else {
-							snprintf(buf, BUFSZ, "060%d0%d0%d", my_identifier, identifier_equipament_i, value);
-						}
-						strtok(buf, "\0");
-					} else if (my_identifier > 9) {
-						if (value > 9){
-							snprintf(buf, BUFSZ, "06%d0%d%d", my_identifier, identifier_equipament_i, value);
-						} else {
-							snprintf(buf, BUFSZ, "06%d0%d0%d", my_identifier, identifier_equipament_i, value);
-						}
-						strtok(buf, "\0");
-					} else {
-						if (value > 9){
-							snprintf(buf, BUFSZ, "060%d%d%d", my_identifier, identifier_equipament_i, value);
-						} else {
-							snprintf(buf, BUFSZ, "060%d%d0%d", my_identifier, identifier_equipament_i, value);
-						}
-						strtok(buf, "\0");
-					}
+					snprintf(buf, BUFSZ, "06%02d%02d%02d", my_identifier, identifier_equipament_i, value);
+					strtok(buf, "\0");
 					send(cdata->socket, buf, strlen(buf)+1, 0);
 					break;
 				
@@ -187,11 +152,7 @@ void * message_receive_thread(void *data) {
                     substring[2] = '\0';
                     int value_read = atoi(substring);
 					if (my_identifier == identifier_equipament_receive) {
-						if (identifier_equipament_origin > 9) {
-							snprintf(message_print, BUFSZ, "Value from %d: %d.00", identifier_equipament_origin, value_read);
-						} else {
-							snprintf(message_print, BUFSZ, "Value from 0%d: %d.00", identifier_equipament_origin, value_read);
-						}
+						snprintf(message_print, BUFSZ, "Value from %02d: %d.00", identifier_equipament_origin, value_read);
 						puts(message_print);
 					}
 					break;
@@ -263,13 +224,8 @@ int main(int argc, char **argv) {
 
 		if (strlen(buf)>1) {
 			if (strcmp(buf, "close connection\n") == 0 || strcmp(buf, "close connection") == 0) {
-				if (my_identifier > 9) {
-					snprintf(buf, BUFSZ, "02%dxxxx", my_identifier);
-					strtok(buf, "\0");
-				} else {
-					snprintf(buf, BUFSZ, "020%dxxxx", my_identifier);
-					strtok(buf, "\0");
-				}
+				snprintf(buf, BUFSZ, "02%02dxxxx", my_identifier);
+				strtok(buf, "\0");
 				size_t count = send(s, buf, strlen(buf)+1, 0);
 				if (count != strlen(buf)+1) {
 					logexit("send");
@@ -315,19 +271,8 @@ int main(int argc, char **argv) {
 			if (strcmp(substring, "request information from \n") == 0 || strcmp(substring, "request information from") == 0) {
 				strncpy(substring,buf+25,2);
 				substring[2] = '\0';
-				if (my_identifier > 9 && atoi(substring) > 9) {
-					snprintf(buf, BUFSZ, "05%d%dxx", my_identifier, atoi(substring));
-					strtok(buf, "\0");
-				} else if (my_identifier < 9 && atoi(substring) < 9) {
-					snprintf(buf, BUFSZ, "050%d0%dxx", my_identifier, atoi(substring));
-					strtok(buf, "\0");
-				} else if (my_identifier > 9) {
-					snprintf(buf, BUFSZ, "05%d0%dxx", my_identifier, atoi(substring));
-					strtok(buf, "\0");
-				} else {
-					snprintf(buf, BUFSZ, "050%d%dxx", my_identifier, atoi(substring));
-					strtok(buf, "\0");
-				}
+				snprintf(buf, BUFSZ, "05%02d%02dxx", my_identifier, atoi(substring));
+				strtok(buf, "\0");
 				size_t count = send(s, buf, strlen(buf)+1, 0);
 				if (count != strlen(buf)+1) {
 					logexit("send");
