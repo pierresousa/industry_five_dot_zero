@@ -118,11 +118,12 @@ void * message_receive_thread(void *data) {
 						exit(EXIT_SUCCESS);
 					} else {
 						clients[(atoi(substring)-1)] = 0;
-						if (atoi(substring)>9) {
-							snprintf(message_print, BUFSZ, "Equipament %d removed", atoi(substring));
-						} else {
-							snprintf(message_print, BUFSZ, "Equipament 0%d removed", atoi(substring));
-						}
+						snprintf(message_print, BUFSZ, "Equipament %02d removed", atoi(substring));
+						// if (atoi(substring)>9) {
+						// 	snprintf(message_print, BUFSZ, "Equipament %d removed", atoi(substring));
+						// } else {
+						// 	snprintf(message_print, BUFSZ, "Equipament 0%d removed", atoi(substring));
+						// }
 						puts(message_print);
 					}
 					break;

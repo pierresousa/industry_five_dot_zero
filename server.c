@@ -37,11 +37,12 @@ void res_list (void *data) {
     char identifier[3];
     for (int i=0; i<MAX_CLIENTS; i++) {
         if (clients[i] != NULL) {
-            if(i>=9) {
-                snprintf(identifier, 3, "%d", (i+1));
-            } else {
-                snprintf(identifier, 3, "0%d", (i+1));
-            }
+            snprintf(identifier, 3, "%02d", (i+1));
+            // if(i>=9) {
+            //     snprintf(identifier, 3, "%d", (i+1));
+            // } else {
+            //     snprintf(identifier, 3, "0%d", (i+1));
+            // }
             strcat(buf, identifier);
         }
     }
@@ -67,28 +68,30 @@ int insert_clients (void *data) {
         if (clients[i] == NULL) {
             clients[i] = cdata;
             num_clients_connected++;
+            printf("Equipament %02d added\n", (i+1));
+            // if(i>=9) {
+            //     printf("Equipament %d added\n", (i+1));
+            // } else {
+            //     printf("Equipament 0%d added\n", (i+1));
+            // }
 
-            if(i>=9) {
-                printf("Equipament %d added\n", (i+1));
-            } else {
-                printf("Equipament 0%d added\n", (i+1));
-            }
-
-            if(i>=9) {
-                snprintf(buf, BUFSZ, "03xxxx%d", (i+1));
-            } else {
-                snprintf(buf, BUFSZ, "03xxxx0%d", (i+1));
-            }
+            snprintf(buf, BUFSZ, "03xxxx%02d", (i+1));
+            // if(i>=9) {
+            //     snprintf(buf, BUFSZ, "03xxxx%d", (i+1));
+            // } else {
+            //     snprintf(buf, BUFSZ, "03xxxx0%d", (i+1));
+            // }
             strtok(buf, "\0");
             send(cdata->csock, buf, strlen(buf), 0);
 
             for (int j=0; j<MAX_CLIENTS; j++) {
                 if (j != i && clients[j] != NULL) {
-                    if(i>=9) {
-                        snprintf(buf, BUFSZ, "03xxxx%d", (i+1));
-                    } else {
-                        snprintf(buf, BUFSZ, "03xxxx0%d", (i+1));
-                    }
+                    snprintf(buf, BUFSZ, "03xxxx%02d", (i+1));
+                    // if(i>=9) {
+                    //     snprintf(buf, BUFSZ, "03xxxx%d", (i+1));
+                    // } else {
+                    //     snprintf(buf, BUFSZ, "03xxxx0%d", (i+1));
+                    // }
                     strtok(buf, "\0");
                     send(clients[j]->csock, buf, strlen(buf), 0);
                 }
@@ -154,20 +157,23 @@ void * client_thread(void *data) {
                     } else {
                         clients[identifier-1] = NULL;
                         num_clients_connected--;
-                        if (identifier>9) {
-                            snprintf(buf, BUFSZ, "08xx%d01", identifier);
-                            strtok(buf, "\0");
-                        } else {
-                            snprintf(buf, BUFSZ, "08xx0%d01", identifier);
-                            strtok(buf, "\0");
-                        }
+                        snprintf(buf, BUFSZ, "08xx%02d01", identifier);
+                        strtok(buf, "\0");
+                        // if (identifier>9) {
+                        //     snprintf(buf, BUFSZ, "08xx%d01", identifier);
+                        //     strtok(buf, "\0");
+                        // } else {
+                        //     snprintf(buf, BUFSZ, "08xx0%d01", identifier);
+                        //     strtok(buf, "\0");
+                        // }
                         send(cdata->csock, buf, strlen(buf), 0);
                         close(cdata->csock);
-                        if (identifier>9) {
-                            snprintf(message_print, BUFSZ, "Equipament %d removed", identifier);
-                        } else {
-                            snprintf(message_print, BUFSZ, "Equipament 0%d removed", identifier);
-                        }
+                        snprintf(message_print, BUFSZ, "Equipament %02d removed", identifier);
+                        // if (identifier>9) {
+                        //     snprintf(message_print, BUFSZ, "Equipament %d removed", identifier);
+                        // } else {
+                        //     snprintf(message_print, BUFSZ, "Equipament 0%d removed", identifier);
+                        // }
                         puts(message_print);
                         for (int j=0; j<MAX_CLIENTS; j++) {
                             if (j != (identifier-1) && clients[j] != NULL) {
